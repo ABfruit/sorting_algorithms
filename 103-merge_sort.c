@@ -3,61 +3,29 @@
 #include <stdio.h>
 
 /**
- * PrintArray - prints array of integers for range of indicies
- * @array: array of values to be printed
- * @iBeg: starting index value
- * @iEnd: ending index value
- */
-void PrintArray(int *array, int iBeg, int iEnd)
+* TDMerge - sorts and merges the sub arrays
+* @start: starting index
+* @middle: end index
+* @end: end index
+* @dest: destination for the data
+* @source: source of the data
+*
+* Return: void
+*/
+void TDMerge(size_t start, size_t middle, size_t end, int *dest, int *source)
 {
-	int i;
-
-	for (i = iBeg; i < iEnd; i++)
-		if (i < iEnd - 1)
-			printf("%i, ", array[i]);
-		else
-			printf("%i\n", array[i]);
-}
-
-/**
- * CopyArray - simple 1 for 1 copy of source[] to dest[]
- * @source: array of values to be sorted
- * @iBeg: starting index value
- * @iEnd: ending index value
- * @dest: array to store sorted integers
- */
-void CopyArray(int *source, int iBeg, int iEnd, int *dest)
-{
-	int i;
-
-	for (i = iBeg; i < iEnd; i++)
-		dest[i] = source[i];
-}
-
-/**
- * TopDownMerge - sorts subsections ("runs") of source[] by ascending value
- * @source: array of values to be sorted
- * @iBeg: left run starting index value
- * @iMid: right run starting index value
- * @iEnd: right run ending index value
- * @dest: array to store sorted integers
- */
-void TopDownMerge(int *source, int iBeg, int iMid, int iEnd, int *dest)
-{
-	int i, j, k;
-
-	i = iBeg, j = iMid;
+	size_t i, j, k;
 
 	printf("Merging...\n");
 	printf("[left]: ");
-	PrintArray(source, iBeg, iMid);
+	print_array(source + start, middle - start);
 	printf("[right]: ");
-	PrintArray(source, iMid, iEnd);
-	/* While there are elements in the left or right runs... */
-	for (k = iBeg; k < iEnd; k++)
+	print_array(source + middle, end - middle);
+	i = start;
+	j = middle;
+	for (k = start; k < end; k++)
 	{
-		/* If left run head exists and is <= existing right run head */
-		if (i < iMid && (j >= iEnd || source[i] <= source[j]))
+		if (i < middle && (j >= end || source[i] <= source[j]))
 		{
 			dest[k] = source[i];
 			i++;
@@ -69,51 +37,50 @@ void TopDownMerge(int *source, int iBeg, int iMid, int iEnd, int *dest)
 		}
 	}
 	printf("[Done]: ");
-	PrintArray(dest, iBeg, iEnd);
+	print_array(dest + start, end - start);
 }
 
 /**
- * TopDownSplitMerge - recursive engine of merge_sort, splits working copy of
- * array into left and right runs, then merges with TopDownMerge
- * @source: array of integers to be sorted
- * @iBeg: starting index value
- * @iEnd: ending index value
- * @dest: array to store sorted integers
- */
-void TopDownSplitMerge(int *source, int iBeg, int iEnd, int *dest)
+* TDSplitMerge - recursively splits the array, merge and sort
+* @start: starting index (inclusive)
+* @end: end index (exclusive)
+* @array: the array to sort
+* @clone: a clone of the array
+*/
+void TDSplitMerge(size_t start, size_t end, int *array, int *clone)
 {
-	int iMid;
+	size_t middle;
 
-	if (iEnd - iBeg < 2) /* if run size == 1 */
-		return;     /* consider it sorted */
-	/* split the run longer than 1 item into halves */
-	iMid = (iEnd + iBeg) / 2;
-
-	TopDownSplitMerge(dest, iBeg, iMid, source);  /* sort left run */
-	TopDownSplitMerge(dest, iMid, iEnd, source);  /* sort right run */
-	/* merge the resulting runs from array[] into work_copy[] */
-	TopDownMerge(source, iBeg, iMid, iEnd, dest);
+	if (end - start < 2)
+		return;
+	middle = (start + end) / 2;
+	TDSplitMerge(start, middle, array, clone);
+	TDSplitMerge(middle, end, array, clone);
+	TDMerge(start, middle, end, array, clone);
+	for (middle = start; middle < end; middle++)
+		clone[middle] = array[middle];
 }
 
 /**
- * merge_sort - sorts an array of integers in ascending order using a
- * top-down merge sort algorithm
- * @array: array of integers to be sorted
- * @size: amount of elements in array
- */
+* merge_sort - sorts an array of integers
+* Merge sort algorithm
+* @array: array to sort
+* @size: size of the array
+*
+* Return: void
+*/
 void merge_sort(int *array, size_t size)
 {
-	int *work_copy;
+	size_t i;
+	int *clone;
 
-	if (!array || size < 2)
+	if (array == NULL || size < 2)
 		return;
-
-	work_copy = malloc(sizeof(int) * size);
-	if (!work_copy)
+	clone = malloc(sizeof(int) * size);
+	if (clone == NULL)
 		return;
-
-	CopyArray(array, 0, size, work_copy);
-	TopDownSplitMerge(work_copy, 0, size, array);
-
-	free(work_copy);
+	for (i = 0; i < size; i++)
+		clone[i] = array[i];
+	TDSplitMerge(0, size, array, clone);
+	free(clone);
 }
